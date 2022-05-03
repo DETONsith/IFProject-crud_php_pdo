@@ -1,6 +1,10 @@
 <?php
   require_once "conexao.php";
   require_once "Produto.class.php";
+
+
+
+
 ?>
 <html>
   <head>
@@ -42,3 +46,23 @@ while($row = $stmt->fetch(PDO::FETCH_OBJ)){
   <a href="add.php" class="btn btn-outline-primary" role="button" aria-pressed="true">Adicionar</a>
   </body>
 </html>
+
+<?php if(!isset($_SESSION['login_id'])){
+        header('Location: login.php');
+        exit;
+    }
+
+    $id = $_SESSION['login_id'];
+
+    $get_user = $conn->prepare("SELECT * FROM `users` WHERE `google_id`='$id'");
+    $get_user->execute();
+    while($row = $stmt->fetch(PDO::FETCH_OBJ)){
+      if()
+    }
+    if(mysqli_num_rows($get_user) > 0){
+        $user = mysqli_fetch_assoc($get_user);
+    } else {
+        header('Location: logout.php');
+        exit;
+    }
+    ?>

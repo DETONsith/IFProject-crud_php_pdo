@@ -1,73 +1,95 @@
 <?php //login
 
+require_once "conexao.php";
 
+if(isset($_SESSION['login_id'])){
+  header("Location: acesso.php");
+  exit;
+
+  require 'google-api/vendor/autoload.php';
+  $cliente = new Google_Client();
+  $cliente->setClientId('518980409361-v78m9oagahgh4r9s8f229fmt3c3b3stp.apps.googleusercontent.com');
+  $cliente->setClientSecret('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');
+  $cliente->setRedirectUri('http://localhost/oficina/');
+  $cliente->addScope('email');
+  $cliente->addScope('profile');
+
+}
 
 ?>
 
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<title>Login</title>
-<meta charset="utf-8">
-<!-- Latest compiled and minified CSS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<!-- Latest compiled JavaScript -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <title>Login with Google Account Using PHP</title>
+    <link rel="stylesheet" type="text/css" href="assets/css/style.css">
 </head>
 <body>
-<form>
-  <!-- Email input -->
-  <div class="form-outline mb-4">
-    <input type="email" id="form2Example1" class="form-control" />
-    <label class="form-label" for="form2Example1">Email address</label>
-  </div>
+    <div class="main-content">
 
-  <!-- Password input -->
-  <div class="form-outline mb-4">
-    <input type="password" id="form2Example2" class="form-control" />
-    <label class="form-label" for="form2Example2">Password</label>
-  </div>
+        <?php
 
-  <!-- 2 column grid layout for inline styling -->
-  <div class="row mb-4">
-    <div class="col d-flex justify-content-center">
-      <!-- Checkbox -->
-      <div class="form-check">
-        <input class="form-check-input" type="checkbox" value="" id="form2Example31" checked />
-        <label class="form-check-label" for="form2Example31"> Remember me </label>
-      </div>
+            if(isset($_GET['code'])) {
+
+                $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+
+                if(!isset($token["error"])){
+
+                    $client->setAccessToken($token['access_token']);
+
+                    // getting profile information
+                    $google_oauth = new Google_Service_Oauth2($client);
+                    $user_info = $google_oauth->userinfo->get();
+                
+                    // escape string and storing data into database
+                    $id = mysqli_real_escape_string($db_connection, $user_info->id);
+                    $full_name = mysqli_real_escape_string($db_connection, trim($user_info->name));
+                    $email = mysqli_real_escape_string($db_connection, $user_info->email);
+                    $profile_pic = mysqli_real_escape_string($db_connection, $user_info->picture);
+
+                    // checking user already exists or not
+                    $get_user = mysqli_query($db_connection, "SELECT `google_id` FROM `users` WHERE `google_id` = '$id'");
+                    if(mysqli_num_rows($get_user) > 0){
+
+                        $_SESSION['login_id'] = $id; 
+                        header('Location: dashboard.php');
+                        exit;
+
+                    } else{
+
+                        // if user not exists in db then insert the user
+                        $insert = mysqli_query($db_connection, "INSERT INTO `users`(`google_id`,`name`,`email`,`profile_image`) VALUES('$id','$full_name','$email','$profile_pic')");
+
+                        if($insert){
+                            $_SESSION['login_id'] = $id; 
+                            header('Location: dashboard.php');
+                            exit;
+                        } else {
+                            echo "Sign in failed!(Something went wrong!!!).";
+                        }
+
+                    }
+
+                }
+                else{
+                    header('Location: login.php');
+                    exit;
+                }
+                
+            } else {
+
+            ?>
+
+            <div class="login_img">
+                <a class="login-btn" href="<?php echo $client->createAuthUrl(); ?>"><img  alt="Sign in with Google" data-src="assets/images/google.png" class="lazyload" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="><noscript><img src="assets/images/google.png" alt="Sign in with Google"></noscript></a>
+            </div>
+
+            <?php 
+
+            }
+
+        ?>  
+
     </div>
-
-    <div class="col">
-      <!-- Simple link -->
-      <a href="#!">Forgot password?</a>
-    </div>
-  </div>
-
-  <!-- Submit button -->
-  <button type="button" class="btn btn-primary btn-block mb-4">Sign in</button>
-
-  <!-- Register buttons -->
-  <div class="text-center">
-    <p>Not a member? <a href="#!">Register</a></p>
-    <p>or sign up with:</p>
-    <button type="button" class="btn btn-link btn-floating mx-1">
-      <i class="fab fa-facebook-f"></i>
-    </button>
-
-    <button type="button" class="btn btn-link btn-floating mx-1">
-      <i class="fab fa-google"></i>
-    </button>
-
-    <button type="button" class="btn btn-link btn-floating mx-1">
-      <i class="fab fa-twitter"></i>
-    </button>
-
-    <button type="button" class="btn btn-link btn-floating mx-1">
-      <i class="fab fa-github"></i>
-    </button>
-  </div>
-</form>
-
 </body>
-    </html>
+</html>
