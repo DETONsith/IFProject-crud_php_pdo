@@ -23,7 +23,7 @@ if(!isset($_REQUEST['codigo']) || $_REQUEST['codigo']==""){ //! = NOT
   // $stmt->bindParam(3,$preco);
     //$stmt->bindParam(4,$codigo);    
    $stmt->execute();
-   header('Location:index.php');
+   header('Location:acesso.php');
 }
 
 ?>
